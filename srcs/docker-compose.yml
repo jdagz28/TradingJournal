@@ -1,0 +1,54 @@
+volumes:
+  postgresql:
+    driver: local
+    driver_opts:
+      type: none
+      device: /home/tradingjournal/data/postgresql
+      o: bind
+  tradingjournal:
+    driver: local
+    driver_opts:
+      type: none
+      device: /home/tradingjournal/data/website
+      o: bind
+
+networks:
+  journal:
+    driver: bridge
+
+services:
+  nginx:
+    container_name: nginx
+    build: ./requirements/nginx
+    image: nginx:jdagoy
+    depends_on:
+      - website
+    volumes:
+      - tradingjournal:/var/www/website
+    ports:
+      - "443:443"
+    networks:
+      - journal
+    restart: always
+  
+  postgresql:
+    container_name: postgresql
+    build: ./requirements/postgresql
+    image: postgresql:jdagoy
+    volumes:
+      - postgresql:/var/lib/mysql
+    env_file:
+      - ../secrets/.env
+    networks:
+      - journal
+    restart: always
+
+  website:
+    container_name: tradingjournal
+    build: ./requirements/website
+    image: website:jdagoy
+    volumes:
+      - tradingjournal:/var/www/website
+    networks:
+      - journal
+    restart: always
